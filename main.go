@@ -88,7 +88,7 @@ var keyboard = map[int]Key{ // TV functions
 	109:                  {Command: "Mute", Help: "M"},
 	110:                  {Command: "Netflix", Help: "N"},
 	106:                  {Command: "Jump", Help: "J"},
-	119:                  {Command: "wide", Help: "W"},
+	119:                  {Command: "Wide", Help: "W"},
 	112:                  {Command: "PAP", Help: "P"},
 	100:                  {Command: "Display", Help: "D"},
 	99:                   {Command: "SceneSelect", Help: "C"},
