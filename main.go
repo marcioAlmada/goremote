@@ -2,74 +2,24 @@ package main
 
 import (
 	"bufio"
-	"bytes"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"net/http"
-	"net/http/cookiejar"
 	"os"
 	"os/signal"
 	"strings"
 
+	"./upnp"
 	"github.com/errnoh/gocurse/curses"
 )
 
-var controlsTable = make(map[string]string)
-var client = http.Client{Jar: oneArg(cookiejar.New(nil)).(http.CookieJar)}
+var client upnp.Controller
 var reader = bufio.NewReader(os.Stdin)
-var authRequestBody = []byte(`{
-    "id": 1,
-    "version": "1.0",
-    "method": "actRegister",
-    "params": [
-        {
-            "clientid": "GoRemoteController",
-            "nickname": "go-remote",
-            "level": "private"
-        },
-        [{
-            "value": "yes",
-            "function": "WOL"
-        }]
-    ]
-}`)
-var constrolsRequestBody = []byte(`{
-    "id": 2,
-    "version": "1.0",
-    "method": "getRemoteControllerInfo",
-    "params": []
-}`)
-var controlRequestEnvelope = `<?xml version="1.0"?>
-<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
-    <s:Body>
-        <u:X_SendIRCC xmlns:u="urn:schemas-sony-com:service:IRCC:1">
-            <IRCCCode>{signal}</IRCCCode>
-        </u:X_SendIRCC>
-    </s:Body>
-</s:Envelope>`
 
-type Config struct {
-	Ip  string
-	Url string
-}
-var config Config
-
-type Envelope struct {
-	Id     uint64
-	Result []json.RawMessage
-}
-type Control struct {
-	Name  string
-	Value string
-}
-type Controls []Control
-
-type Key struct {
+type key struct {
 	Command string
 	Help    string
 }
-var keyboard = map[int]Key{ // TV functions
+
+var keyboard = map[int]key{ // keyboard mapping
 	curses.KEY_HOME:      {Command: "Home", Help: "home"},
 	curses.KEY_UP:        {Command: "Up", Help: "Arrow Up"},
 	curses.KEY_DOWN:      {Command: "Down", Help: "Arrow Down"},
@@ -77,7 +27,7 @@ var keyboard = map[int]Key{ // TV functions
 	curses.KEY_RIGHT:     {Command: "Right", Help: "Arrow Right"},
 	curses.KEY_BACKSPACE: {Command: "Return", Help: "Backspace"},
 	curses.KEY_ENTER:     {Command: "Confirm", Help: "Enter"},
-	10:                   {Command: "Confirm", Help: "Enter"},
+	10:                   {Command: "Confirm", Help: "Enter"}, // fallback when KEY_ENTER fails
 	27:                   {Command: "Exit", Help: "Esc"},
 	32:                   {Command: "Play", Help: "Space"},
 	111:                  {Command: "Options", Help: "O"},
@@ -117,44 +67,46 @@ var keyboard = map[int]Key{ // TV functions
 }
 
 func main() {
-
-	config.Ip = os.Args[1]
-	config.Url = "http://" + config.Ip + "/sony"
-
-	handshakeRequest, _ := http.NewRequest("POST", config.Url+"/accessControl", bytes.NewBuffer(authRequestBody))
-	handshakeRequest.Header.Set("content-type", "application/json")
-	response, err := client.Do(handshakeRequest)
-	nuke(err, "Could not find device.")
+	client = upnp.NewController(os.Args[1])
+	response, e := client.Handshake()
+	nuke(e, "Could not find device.")
 
 	if 401 == response.StatusCode { // authorize in case client is not authorized yet
-		pin := prompt("Enter provided pin code: ")
-		authRequest, _ := http.NewRequest("POST", config.Url+"/accessControl", bytes.NewBuffer(authRequestBody))
-		authRequest.Header.Set("content-type", "application/json")
-		authRequest.Header.Set("authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(":"+pin)))
-		response, err = client.Do(authRequest) // notice we are overwriting response from handshakeRequest
-		nuke(err, "Authentication faile. Is the pin code right?")
+		pin := prompt("Enter provided pin code: ") // get pin code from devie
+		response, e = client.Authorize(pin)
+		nuke(e, "Authentication failed. Is the pin code right?")
 	}
 
 	if 200 == response.StatusCode { // let's get UPnP control list from device
-		controlsResponse, err := http.Post(config.Url+"/system", "application/json", bytes.NewBuffer(constrolsRequestBody))
-		nuke(err, "Could not retrieve UPnP control list from device.")
-		envelope := new(Envelope)
-		json.NewDecoder(controlsResponse.Body).Decode(envelope)
-		if 0 == len(envelope.Result) {
-			fmt.Fprintln(os.Stderr, "Could not retrieve UPnP control list from device.")
-			os.Exit(1)
-		}
-		var controls Controls
-		json.Unmarshal(envelope.Result[1], &controls)
-		for _, control := range controls {
-			controlsTable[string(control.Name)] = control.Value
-		}
+		_, e := client.RequestControlsList()
+		nuke(e, "Could not retrieve UPnP control list from device.")
 		runDaemon()
 	}
 }
 
 func runDaemon() {
-	// handle program termination
+	handleProcTermination()
+	curses.Noecho()
+	screen, _ := curses.Initscr()
+	screen.Keypad(true) // interpret escape sequences
+	screen.Addstr(0, 0, fmt.Sprintf("Use the keyboard:"), 0)
+	screen.Move(0, 1)
+	for {
+		keyCode := screen.Getch()
+		// fmt.Println(keyCode)
+		key, ok := keyboard[keyCode]
+		if ok { // is the key mapped? Otherwise ignore it
+			ok := client.SendCommand(key.Command)
+			if ok { // show status on screen when request is made
+				screen.Move(0, 1)
+				screen.Clrtoeol()
+				screen.Addstr(0, 1, fmt.Sprintf("%s >> %s", key.Command, client.IP), 0)
+			}
+		}
+	}
+}
+
+func handleProcTermination() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
@@ -163,39 +115,6 @@ func runDaemon() {
 		os.Exit(0)
 	}()
 	defer curses.Endwin()
-	
-	curses.Noecho()
-	screen, _ := curses.Initscr()
-	screen.Keypad(true) // interpret escape sequences
-	screen.Addstr(0, 0, fmt.Sprintf("Use the keyboard:"), 0)
-	for {
-		keyCode := screen.Getch()
-		key, ok := dispatch(keyCode)
-		if ok {
-			screen.Move(0, 1)
-			screen.Clrtoeol()
-			screen.Addstr(0, 1, fmt.Sprintf("%s >> %s", key.Command, config.Ip), 0)
-		}
-	}
-}
-
-func dispatch(keyCode int) (key Key, ok bool) {
-	key, ok = keyboard[keyCode]
-	if ok {
-		signal, ok := controlsTable[key.Command]
-		if ok {
-			request, _ := http.NewRequest(
-				"POST",
-				config.Url+"/IRCC",
-				bytes.NewBuffer(
-					[]byte(
-						strings.Replace(controlRequestEnvelope, "{signal}", signal, -1))))
-			request.Header.Set("content-type", "text/xml; charset=UTF-8")
-			request.Header.Set("soapaction", "urn:schemas-sony-com:service:IRCC:1#X_SendIRCC")
-			client.Do(request)
-		}
-	}
-	return
 }
 
 func prompt(message string) (str string) {
@@ -212,8 +131,4 @@ func nuke(err error, msg string) {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}
-}
-
-func oneArg(x interface{}, _ ...interface{}) interface{} {
-	return x
 }
