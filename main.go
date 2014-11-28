@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -67,6 +68,9 @@ var keyboard = map[int]key{ // keyboard mapping
 }
 
 func main() {
+	if len(os.Args) != 2 {
+		nuke(errors.New("Missing argument 1"), "Please inform device address")
+	}
 	client = upnp.NewController(os.Args[1])
 	response, e := client.Handshake()
 	nuke(e, "Could not find device.")

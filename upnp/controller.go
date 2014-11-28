@@ -48,16 +48,14 @@ var authRequestBody = []byte(`{
 
 // Handshake with remote device
 func (c Controller) Handshake() (response *http.Response, e error) {
-	request, _ := http.NewRequest("POST", c.getURL("accessControl"), bytes.NewBuffer(authRequestBody))
-	request.Header.Set("content-type", "application/json")
+	request, _ := c.newJSONRequest("POST", "accessControl", authRequestBody)
 	response, e = c.client.Do(request)
 	return
 }
 
 // Authorize with remote device providing an "Authorization: Basic *" header
 func (c Controller) Authorize(pin string) (response *http.Response, e error) {
-	request, _ := http.NewRequest("POST", c.getURL("accessControl"), bytes.NewBuffer(authRequestBody))
-	request.Header.Set("content-type", "application/json")
+	request, _ := c.newJSONRequest("POST", "accessControl", authRequestBody)
 	request.Header.Set("authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(":"+pin)))
 	response, e = c.client.Do(request)
 	return
@@ -82,10 +80,8 @@ var constrolsRequestBody = []byte(`{
 
 // RequestControlsList gets UPnP controller description from remote device
 func (c Controller) RequestControlsList() (response *http.Response, e error) {
-	request, _ := http.NewRequest("POST", c.getURL("system"), bytes.NewBuffer(constrolsRequestBody))
-	request.Header.Set("content-type", "application/json")
+	request, _ := c.newJSONRequest("POST", "system", constrolsRequestBody)
 	response, e = c.client.Do(request)
-
 	if e == nil {
 		envelope := new(envelope)
 		json.NewDecoder(response.Body).Decode(envelope)
@@ -114,17 +110,24 @@ var commandRequestBody = `<?xml version="1.0"?>
 // SendCommand sends a signal to activate a remote device function
 func (c Controller) SendCommand(command string) (ok bool) {
 	signal, ok := c.controlsTable[command]
+	body := strings.Replace(commandRequestBody, "{signal}", signal, -1)
 	if ok {
-		request, _ := http.NewRequest(
-			"POST",
-			c.getURL("IRCC"),
-			bytes.NewBuffer(
-				[]byte(
-					strings.Replace(commandRequestBody, "{signal}", signal, -1))))
-		request.Header.Set("content-type", "text/xml; charset=UTF-8")
-		request.Header.Set("soapaction", "urn:schemas-sony-com:service:IRCC:1#X_SendIRCC")
+		request, _ := c.newSOAPRequest("POST", "IRCC", []byte(body))
 		c.client.Do(request)
 	}
+	return
+}
+
+func (c Controller) newJSONRequest(method string, endpoint string, body []byte) (request *http.Request, e error) {
+	request, e = http.NewRequest(method, c.getURL(endpoint), bytes.NewBuffer(body))
+	request.Header.Set("content-type", "application/json")
+	return
+}
+
+func (c Controller) newSOAPRequest(method string, endpoint string, body []byte) (request *http.Request, e error) {
+	request, e = http.NewRequest(method, c.getURL(endpoint), bytes.NewBuffer(body))
+	request.Header.Set("content-type", "text/xml; charset=UTF-8")
+	request.Header.Set("soapaction", "urn:schemas-sony-com:service:IRCC:1#X_SendIRCC")
 	return
 }
 
