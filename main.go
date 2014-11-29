@@ -12,9 +12,6 @@ import (
 	"github.com/errnoh/gocurse/curses"
 )
 
-var client upnp.Controller
-var reader = bufio.NewReader(os.Stdin)
-
 type key struct {
 	Command string
 	Help    string
@@ -71,7 +68,7 @@ func main() {
 	if len(os.Args) != 2 {
 		nuke(errors.New("Missing argument 1"), "Please inform device address")
 	}
-	client = upnp.NewController(os.Args[1])
+	client := upnp.NewController(os.Args[1])
 	response, e := client.Handshake()
 	nuke(e, "Could not find device.")
 
@@ -84,11 +81,11 @@ func main() {
 	if 200 == response.StatusCode { // let's get UPnP control list from device
 		_, e := client.RequestControlsList()
 		nuke(e, "Could not retrieve UPnP control list from device.")
-		runDaemon()
+		runDaemon(client)
 	}
 }
 
-func runDaemon() {
+func runDaemon(client upnp.Controller) {
 	handleProcTermination()
 	curses.Noecho()
 	screen, _ := curses.Initscr()
@@ -122,6 +119,7 @@ func handleProcTermination() {
 }
 
 func prompt(message string) (str string) {
+	reader := bufio.NewReader(os.Stdin)
 	fmt.Print(message)
 	str, err := reader.ReadString('\n')
 	nuke(err, "Could not read input.")
