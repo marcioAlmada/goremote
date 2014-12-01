@@ -10,18 +10,18 @@ import (
 	"strings"
 )
 
-// Controller is a client to comunicate with remote device
-type Controller struct {
+// Client is used to comunicate with remote device
+type Client struct {
 	IP            string
 	url           string
 	client        http.Client
 	controlsTable map[string]string
 }
 
-// NewController instantiates new device remote controller client
-func NewController(ip string) Controller {
+// NewClient instantiates new device remote controller client
+func NewClient(ip string) Client {
 	cookieJar, _ := cookiejar.New(nil)
-	return Controller{
+	return Client{
 		IP:            ip,
 		url:           strings.Replace("http://{ip}/sony/{endpoint}", "{ip}", ip, -1),
 		client:        http.Client{Jar: cookieJar},
@@ -36,7 +36,7 @@ var authRequestBody = []byte(`{
     "params": [
         {
             "clientid": "GoRemoteController",
-            "nickname": "go-remote",
+            "nickname": "go-remote-controller",
             "level": "private"
         },
         [{
@@ -47,14 +47,14 @@ var authRequestBody = []byte(`{
 }`)
 
 // Handshake with remote device
-func (c Controller) Handshake() (response *http.Response, e error) {
+func (c Client) Handshake() (response *http.Response, e error) {
 	request, _ := c.newJSONRequest("POST", "accessControl", authRequestBody)
 	response, e = c.client.Do(request)
 	return
 }
 
 // Authorize with remote device providing an "Authorization: Basic *" header
-func (c Controller) Authorize(pin string) (response *http.Response, e error) {
+func (c Client) Authorize(pin string) (response *http.Response, e error) {
 	request, _ := c.newJSONRequest("POST", "accessControl", authRequestBody)
 	request.Header.Set("authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(":"+pin)))
 	response, e = c.client.Do(request)
@@ -79,7 +79,7 @@ var constrolsRequestBody = []byte(`{
 }`)
 
 // RequestControlsList gets UPnP controller description from remote device
-func (c Controller) RequestControlsList() (response *http.Response, e error) {
+func (c Client) RequestControlsList() (response *http.Response, e error) {
 	request, _ := c.newJSONRequest("POST", "system", constrolsRequestBody)
 	response, e = c.client.Do(request)
 	if e == nil {
@@ -108,7 +108,7 @@ var commandRequestBody = `<?xml version="1.0"?>
 </s:Envelope>`
 
 // SendCommand sends a signal to activate a remote device function
-func (c Controller) SendCommand(command string) (ok bool) {
+func (c Client) SendCommand(command string) (ok bool) {
 	signal, ok := c.controlsTable[command]
 	body := strings.Replace(commandRequestBody, "{signal}", signal, -1)
 	if ok {
@@ -118,19 +118,19 @@ func (c Controller) SendCommand(command string) (ok bool) {
 	return
 }
 
-func (c Controller) newJSONRequest(method string, endpoint string, body []byte) (request *http.Request, e error) {
+func (c Client) newJSONRequest(method string, endpoint string, body []byte) (request *http.Request, e error) {
 	request, e = http.NewRequest(method, c.getURL(endpoint), bytes.NewBuffer(body))
 	request.Header.Set("content-type", "application/json")
 	return
 }
 
-func (c Controller) newSOAPRequest(method string, endpoint string, body []byte) (request *http.Request, e error) {
+func (c Client) newSOAPRequest(method string, endpoint string, body []byte) (request *http.Request, e error) {
 	request, e = http.NewRequest(method, c.getURL(endpoint), bytes.NewBuffer(body))
 	request.Header.Set("content-type", "text/xml; charset=UTF-8")
 	request.Header.Set("soapaction", "urn:schemas-sony-com:service:IRCC:1#X_SendIRCC")
 	return
 }
 
-func (c Controller) getURL(endpoint string) string {
+func (c Client) getURL(endpoint string) string {
 	return strings.Replace(c.url, "{endpoint}", endpoint, -1)
 }

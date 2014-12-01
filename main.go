@@ -68,7 +68,7 @@ func main() {
 	if len(os.Args) != 2 {
 		nuke(errors.New("Missing argument 1"), "Please inform device address")
 	}
-	client := upnp.NewController(os.Args[1])
+	client := upnp.NewClient(os.Args[1])
 	response, e := client.Handshake()
 	nuke(e, "Could not find device.")
 
@@ -85,7 +85,7 @@ func main() {
 	}
 }
 
-func runDaemon(client upnp.Controller) {
+func runDaemon(client upnp.Client) {
 	handleProcTermination()
 	curses.Noecho()
 	screen, _ := curses.Initscr()
