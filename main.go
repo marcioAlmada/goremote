@@ -34,6 +34,7 @@ var keyboard = map[int]key{ // keyboard mapping
 	65:                   {Command: "VolumeUp", Help: "+"},
 	66:                   {Command: "VolumeDown", Help: "-"},
 	109:                  {Command: "Mute", Help: "M"},
+	116:                  {Command: "Theater", Help: "T"},
 	110:                  {Command: "Netflix", Help: "N"},
 	106:                  {Command: "Jump", Help: "J"},
 	119:                  {Command: "Wide", Help: "W"},
