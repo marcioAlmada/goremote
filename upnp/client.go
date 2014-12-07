@@ -102,20 +102,23 @@ var commandRequestBody = `<?xml version="1.0"?>
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
     <s:Body>
         <u:X_SendIRCC xmlns:u="urn:schemas-sony-com:service:IRCC:1">
-            <IRCCCode>{signal}</IRCCCode>
+            <IRCCCode>{IRCC}</IRCCCode>
         </u:X_SendIRCC>
     </s:Body>
 </s:Envelope>`
 
 // SendCommand sends a signal to activate a remote device function
-func (c Client) SendCommand(command string) (ok bool) {
-	signal, ok := c.controlsTable[command]
-	body := strings.Replace(commandRequestBody, "{signal}", signal, -1)
-	if ok {
-		request, _ := c.newSOAPRequest("POST", "IRCC", []byte(body))
-		c.client.Do(request)
-	}
+func (c Client) SendCommand(command string) (signal string, ok bool, response *http.Response, e error) {
+	signal, ok = c.controlsTable[command]
+    response, e = c.SendIRCC(signal)
 	return
+}
+
+// SendIRCC sends a raw IRCC signal to device
+func (c Client) SendIRCC(IRCC string) (*http.Response, error) {
+    body := strings.Replace(commandRequestBody, "{IRCC}", IRCC, -1)
+    request, _ := c.newSOAPRequest("POST", "IRCC", []byte(body))
+    return c.client.Do(request)
 }
 
 func (c Client) newJSONRequest(method string, endpoint string, body []byte) (request *http.Request, e error) {

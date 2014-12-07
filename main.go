@@ -98,11 +98,11 @@ func runDaemon(client upnp.Client) {
 		// fmt.Println(keyCode)
 		key, ok := keyboard[keyCode]
 		if ok { // is the key mapped? Otherwise ignore it
-			ok := client.SendCommand(key.Command)
+			signal, ok, _, _ := client.SendCommand(key.Command)
 			if ok { // show status on screen when request is made
 				screen.Move(0, 1)
 				screen.Clrtoeol()
-				screen.Addstr(0, 1, fmt.Sprintf("%s >> %s", key.Command, client.IP), 0)
+				screen.Addstr(0, 1, fmt.Sprintf("%s (%s) >> %s", key.Command, signal, client.IP), 0)
 			}
 		}
 	}
