@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"strings"
 
-	"./upnp"
+	"marcioAlmada/tv/upnp"
 	"github.com/errnoh/gocurse/curses"
 )
 
