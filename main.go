@@ -82,11 +82,11 @@ func main() {
 	if 200 == response.StatusCode { // let's get UPnP control list from device
 		_, e := client.RequestControlsList()
 		nuke(e, "Could not retrieve UPnP control list from device.")
-		runDaemon(client)
+		runREPL(client)
 	}
 }
 
-func runDaemon(client upnp.Client) {
+func runREPL(client upnp.Client) {
 	handleProcTermination()
 	curses.Noecho()
 	screen, _ := curses.Initscr()
