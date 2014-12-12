@@ -87,15 +87,24 @@ func main() {
 }
 
 func runREPL(client upnp.Client) {
-	handleProcTermination()
+	// handle process termination
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+		curses.Endwin()
+		os.Exit(0)
+	}()
+	defer curses.Endwin()
+	// curses gui
 	curses.Noecho()
 	screen, _ := curses.Initscr()
 	screen.Keypad(true) // interpret escape sequences
 	screen.Addstr(0, 0, fmt.Sprintf("Use the keyboard:"), 0)
 	screen.Move(0, 1)
+	// run the REPL!
 	for {
 		keyCode := screen.Getch()
-		// fmt.Println(keyCode)
 		key, ok := keyboard[keyCode]
 		if ok { // is the key mapped? Otherwise ignore it
 			signal, ok, _, _ := client.SendCommand(key.Command)
@@ -106,17 +115,6 @@ func runREPL(client upnp.Client) {
 			}
 		}
 	}
-}
-
-func handleProcTermination() {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		<-c
-		curses.Endwin()
-		os.Exit(0)
-	}()
-	defer curses.Endwin()
 }
 
 func prompt(message string) (str string) {
