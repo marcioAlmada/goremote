@@ -12,12 +12,7 @@ import (
 	"github.com/errnoh/gocurse/curses"
 )
 
-type key struct {
-	Command string
-	Help    string
-}
-
-var keyboard = map[int]key{ // keyboard mapping
+var actionsMap = keyMap{ // keyboard mapping
 	curses.KEY_HOME:      {Command: "Home", Help: "home"},
 	curses.KEY_UP:        {Command: "Up", Help: "Arrow Up"},
 	curses.KEY_DOWN:      {Command: "Down", Help: "Arrow Down"},
@@ -25,7 +20,6 @@ var keyboard = map[int]key{ // keyboard mapping
 	curses.KEY_RIGHT:     {Command: "Right", Help: "Arrow Right"},
 	curses.KEY_BACKSPACE: {Command: "Return", Help: "Backspace"},
 	curses.KEY_ENTER:     {Command: "Confirm", Help: "Enter"},
-	10:                   {Command: "Confirm", Help: "Enter"}, // fallback when KEY_ENTER fails
 	27:                   {Command: "Exit", Help: "Esc"},
 	32:                   {Command: "Play", Help: "Space"},
 	111:                  {Command: "Options", Help: "O"},
@@ -65,6 +59,10 @@ var keyboard = map[int]key{ // keyboard mapping
 	57:                   {Command: "Num9", Help: "9"},
 }
 
+var alternativeMap = keyMap{
+	10: {Command: "Confirm", Help: "Enter"}, // fallback when KEY_ENTER fails
+}
+
 func main() {
 	if len(os.Args) != 2 {
 		nuke(errors.New("Missing argument 1"), "Please inform device address")
@@ -102,10 +100,12 @@ func runREPL(client upnp.Client) {
 	screen.Keypad(true) // interpret escape sequences
 	screen.Addstr(0, 0, fmt.Sprintf("Use the keyboard:"), 0)
 	screen.Move(0, 1)
+	// add alternative key bidings to actionsMap
+	actionsMap.Merge(alternativeMap)
 	// run the REPL!
 	for {
 		keyCode := screen.Getch()
-		key, ok := keyboard[keyCode]
+		key, ok := actionsMap[keyCode]
 		if ok { // is the key mapped? Otherwise ignore it
 			signal, ok, _, _ := client.SendCommand(key.Command)
 			if ok { // show status on screen when request is made
