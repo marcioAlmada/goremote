@@ -79,8 +79,8 @@ func main() {
 
 	if 200 == response.StatusCode { // let's get UPnP control list from device
 		_, e := client.RequestControlsList()
-		nuke(e, "Could not retrieve UPnP control list from device.")
 		runREPL(client)
+		nuke(e)
 	}
 }
 
@@ -126,9 +126,11 @@ func prompt(message string) (str string) {
 	return
 }
 
-func nuke(err error, msg string) {
+func nuke(err error, msg ...string) {
 	if err != nil {
-		fmt.Fprintln(os.Stderr, msg)
+		if(len(msg) > 1){
+			fmt.Fprintln(os.Stderr, msg[1])
+		}
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}
