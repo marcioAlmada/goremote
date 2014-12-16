@@ -2,13 +2,13 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"os"
 	"os/signal"
 	"strings"
 
 	"marcioAlmada/tv/upnp"
+	"github.com/jessevdk/go-flags"
 	"github.com/errnoh/gocurse/curses"
 )
 
@@ -63,11 +63,17 @@ var alternativeMap = keyMap{
 	10: {Command: "Confirm", Help: "Enter"}, // fallback when KEY_ENTER fails
 }
 
+type options struct {
+	Args struct { IP string } `positional-args:"yes" required:"yes"`
+	REPL bool `short:"r" long:"repl" description:"Use a command line REPL session instead of gui"`
+}
+
 func main() {
-	if len(os.Args) != 2 {
-		nuke(errors.New("Missing argument 1"), "Please inform device address")
-	}
-	client := upnp.NewClient(os.Args[1])
+	var options options;
+	_, e := flags.Parse(&options)
+	nuke(e)
+
+	client := upnp.NewClient(options.Args.IP)
 	response, e := client.Handshake()
 	nuke(e, "Could not find device.")
 
