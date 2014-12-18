@@ -12,55 +12,6 @@ import (
 	"github.com/errnoh/gocurse/curses"
 )
 
-var actionsMap = keyMap{ // keyboard mapping
-	curses.KEY_HOME:      {Command: "Home", Help: "home"},
-	curses.KEY_UP:        {Command: "Up", Help: "Arrow Up"},
-	curses.KEY_DOWN:      {Command: "Down", Help: "Arrow Down"},
-	curses.KEY_LEFT:      {Command: "Left", Help: "Arrow Left"},
-	curses.KEY_RIGHT:     {Command: "Right", Help: "Arrow Right"},
-	curses.KEY_BACKSPACE: {Command: "Return", Help: "Backspace"},
-	curses.KEY_ENTER:     {Command: "Confirm", Help: "Enter"},
-	27:                   {Command: "Exit", Help: "Esc"},
-	32:                   {Command: "Play", Help: "Space"},
-	111:                  {Command: "Options", Help: "O"},
-	339:                  {Command: "ChannelUp", Help: "PageUp"},
-	338:                  {Command: "ChannelDown", Help: "PageDown"},
-	43:                   {Command: "VolumeUp", Help: "+"},
-	45:                   {Command: "VolumeDown", Help: "-"},
-	109:                  {Command: "Mute", Help: "M"},
-	116:                  {Command: "Theater", Help: "T"},
-	110:                  {Command: "Netflix", Help: "N"},
-	106:                  {Command: "Jump", Help: "J"},
-	119:                  {Command: "Wide", Help: "W"},
-	112:                  {Command: "PAP", Help: "P"},
-	100:                  {Command: "Display", Help: "D"},
-	99:                   {Command: "SceneSelect", Help: "C"},
-	115:                  {Command: "ClosedCaption", Help: "S"},
-	104:                  {Command: "iManual", Help: "H"},
-	105:                  {Command: "Input", Help: "I"},
-	267:                  {Command: "Mode3D", Help: "F3"},
-	107:                  {Command: "KeyPad", Help: "K"},
-	102:                  {Command: "FootballMode", Help: "F"},
-	276:                  {Command: "PowerOff", Help: "F12"},
-	114:                  {Command: "Red", Help: "R"},
-	103:                  {Command: "Green", Help: "G"},
-	121:                  {Command: "Yellow", Help: "Y"},
-	98:                   {Command: "Blue", Help: "B"},
-	46:                   {Command: "DOT", Help: "."},
-	48:                   {Command: "Num0", Help: "0"},
-	49:                   {Command: "Num1", Help: "1"},
-	50:                   {Command: "Num2", Help: "2"},
-	51:                   {Command: "Num3", Help: "3"},
-	52:                   {Command: "Num4", Help: "4"},
-	53:                   {Command: "Num5", Help: "5"},
-	54:                   {Command: "Num6", Help: "6"},
-	55:                   {Command: "Num7", Help: "7"},
-	56:                   {Command: "Num8", Help: "8"},
-	57:                   {Command: "Num9", Help: "9"},
-}
-
-var alternativeMap = keyMap{
-	10: {Command: "Confirm", Help: "Enter"}, // fallback when KEY_ENTER fails
 }
 
 type options struct {
