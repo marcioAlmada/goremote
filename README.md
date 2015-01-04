@@ -1,19 +1,12 @@
 GoRemote
 ========
 
-I got fed up of searching for my TV remote controller below the sofa and pillows only to find it later inside the refrigerator.
-
-So I quickly hacked this amazing (POG) **Virtual TV remote controller**:
+A quickly hacked (POG alert) **Virtual TV remote controller** because sometimes it's much easier
+to use a notebook to control your "smart" TV through Wi-Fi network:
 
 <img
     src="https://github.com/marcioAlmada/goremote/blob/master/screenshots/cover.png"
     title="GTK gui VS curses interface" />
-
-Besides the "physical indexing" issue:
-
-- Sometimes it's much easier to use a notebook to control your TV
-- The remote control needs battery to be changed once in a while, virtual one doesn't
-- I needed a Go pet project to maintain and keep the gopher on my desk alive
 
 > This was tested with a Sony Bravia KDL-50W805B and alike. PRs supporting other devices are welcome.
 
@@ -37,7 +30,7 @@ $ goremote <tv-ip> # click the buttons :)
 ```
 
 > First time TV access can't be done with the GUI yet because I was too lazy to implement
-the auth screen, [here](blob/master/gtkApplication.go#L34).
+the auth screen, [here](/gtkApplication.go#L34).
 
 ### Terminal
 
