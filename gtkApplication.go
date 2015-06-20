@@ -50,11 +50,11 @@ func (app gtkApplication) Run(client upnp.Client, keyMap, _ keyMap) (e error) {
 			window.SetTitle("GoRemote")
 			// use GTK3 fancy HeaderBar :)
 			/*
-			titlebar, _ := gtk.HeaderBarNew()
-			titlebar.SetTitle("Go Controller")
-			titlebar.SetSubtitle(">>" + client.IP)
-			titlebar.SetShowCloseButton(true)
-			window.SetTitlebar(titlebar)
+				titlebar, _ := gtk.HeaderBarNew()
+				titlebar.SetTitle("Go Controller")
+				titlebar.SetSubtitle(">>" + client.IP)
+				titlebar.SetShowCloseButton(true)
+				window.SetTitlebar(titlebar)
 			*/
 			// link ui buttons manually
 			// wrapper for builder.ConnectSignals(nil) is not ready in gotk3 yet
