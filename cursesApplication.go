@@ -31,8 +31,7 @@ func (cursesApplication) PromptPinCode() (str string) {
 
 // Run executes the command line curses application
 func (app cursesApplication) Run(client upnp.Client, keyMap, altKeyMap keyMap) (e error) {
-	// handle process termination
-	c := make(chan os.Signal, 1)
+	c := make(chan os.Signal, 1) // handle process termination
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		<-c
@@ -51,7 +50,7 @@ func (app cursesApplication) Run(client upnp.Client, keyMap, altKeyMap keyMap) (
 	app.screen.Scrollok(true) // infinite screen
 	gocurses.Noecho()         // avoid char leak of unmapped keys
 	// run the REPL!
-	app.screen.Addstr("> Ready to rumble!")
+	app.screen.Addstr("> Ready!")
 	for {
 		ch := app.screen.Getch()
 		if 4 == ch { // handles CTRL+D
@@ -60,7 +59,11 @@ func (app cursesApplication) Run(client upnp.Client, keyMap, altKeyMap keyMap) (
 		go func() {
 			if key, ok := keyMap[ch]; ok {
 				if _, _, e := client.SendCommand(key.Command); e == nil {
-					app.screen.Addstr("\n", client.IP, "> ", key.Command)
+					if _, windowx := app.screen.Getmaxyx(); windowx > 30 {
+						app.screen.Addstr("\n", client.IP, "> ", key.Command)
+					} else {
+						app.screen.Addstr("\n> ", key.Command)
+					}
 				} else {
 					app.screen.Addstr("\n", "ERROR: ", e)
 				}
