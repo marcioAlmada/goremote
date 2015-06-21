@@ -43,19 +43,10 @@ func (app gtkApplication) Run(client upnp.Client, keyMap, _ keyMap) (e error) {
 	if e = app.builder.AddFromResource("/marcio/gocontroller/resources/main.ui"); e != nil {
 		return
 	}
-	obj, e := app.builder.GetObject("Window")
-	if e == nil {
+	if obj, e := app.builder.GetObject("Window"); e == nil {
 		// try to load ui main window object
 		if window, ok := obj.(*gtk.Window); ok {
 			window.SetTitle("GoRemote")
-			// use GTK3 fancy HeaderBar :)
-			/*
-				titlebar, _ := gtk.HeaderBarNew()
-				titlebar.SetTitle("Go Controller")
-				titlebar.SetSubtitle(">>" + client.IP)
-				titlebar.SetShowCloseButton(true)
-				window.SetTitlebar(titlebar)
-			*/
 			// link ui buttons manually
 			// wrapper for builder.ConnectSignals(nil) is not ready in gotk3 yet
 			// see https://github.com/conformal/gotk3/issues/50
