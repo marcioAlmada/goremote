@@ -146,13 +146,14 @@ func (c Client) Authorize(pin string) (*http.Response, error) {
 }
 
 // RequestSystemInformation gathers device system information
-func (c *Client) RequestSystemInformation() (system info, e error) {
+func (c *Client) RequestSystemInformation() (e error) {
 	request, _ := c.newJSONRequest("POST", "system", systemInformationRequestbody)
 	response, e := c.client.Do(request)
 	if e == nil {
 		envelope := new(envelope)
 		json.NewDecoder(response.Body).Decode(envelope)
 		if 0 != len(envelope.Result) {
+			var system info
 			json.Unmarshal(envelope.Result[0], &system)
 			c.Mac = system.MacAddr
 		}
