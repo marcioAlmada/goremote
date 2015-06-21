@@ -22,7 +22,7 @@ type options struct {
 }
 
 func main() {
-	storagePath := os.Getenv("HOME") + "/.gocontroller/"
+	storagePath := getStoragePath()
 
 	os.MkdirAll(storagePath, 0777) // setup
 
@@ -51,7 +51,8 @@ func main() {
 	if 200 == response.StatusCode { // authenticated
 		_, e := client.RequestControlsList() // let's get UPnP control list from device
 		nuke(e, "Maybe device is off?")
-		client.RequestSystemInformation()
+		e = client.RequestSystemInformation()
+		nuke(e, "Failed to retrieve device information")
 		filePutContents(storagePath+client.IP, client.Mac)    // cache device info
 		e = app.Run(client, defaultKeyMap, alternativeKeyMap) // run!
 		nuke(e, "Failed to launch application")
@@ -73,23 +74,22 @@ func getStoragePath() string {
 }
 
 func fileGetContents(filename string) string {
-	fp, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, os.ModePerm)
+	fp, err := os.Open(filename)
 	if err != nil {
 		return ""
 	}
 	defer fp.Close()
 	reader := bufio.NewReader(fp)
 	bytes, _ := ioutil.ReadAll(reader)
-	contents := strings.TrimRight(string(bytes), "\n\r")
-	return contents
+	return strings.TrimRight(string(bytes), "\n\r")
 }
 
-func filePutContents(filename string, content string) error {
+func filePutContents(filename string, content string) (err error) {
 	fp, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, os.ModePerm)
 	if err != nil {
-		return err
+		return
 	}
 	defer fp.Close()
 	_, err = fp.Write([]byte(content))
-	return err
+	return
 }
